@@ -381,6 +381,27 @@ app.get('/qq-search', async (req, res) => {
   } catch (e) { res.json({ code: 500, data: [], error: e.message }) }
 })
 
+// Audio streaming proxy
+app.get('/stream', (req, res) => {
+  const id = req.query.id
+  if (!id) return res.status(400).json({ error: 'id required' })
+  const { song_url } = require('NeteaseCloudMusicApi')
+  song_url({ id, br: 999000 }).then(r => {
+    const url = r.body?.data?.[0]?.url
+    if (!url) return res.status(404).json({ error: 'no audio url' })
+    const http = require('http')
+    const https = require('https')
+    const client = url.startsWith('https') ? https : http
+    const cdnReq = client.get(url, { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://music.163.com' } }, (cdnRes) => {
+      if (cdnRes.statusCode >= 400) { res.status(502).json({ error: 'CDN error ' + cdnRes.statusCode }); return }
+      res.set({ 'Content-Type': cdnRes.headers['content-type'] || 'audio/mpeg', 'Accept-Ranges': 'bytes', 'Access-Control-Allow-Origin': '*' })
+      res.flushHeaders()
+      cdnRes.pipe(res)
+    })
+    cdnReq.on('error', (e) => { try { res.status(502).json({ error: e.message }) } catch {} })
+  }).catch(e => res.status(500).json({ error: e.message }))
+})
+
 const PORT = process.env.PORT || 3000
 app.get('/', (_req, res) => res.json({ ok: true, uptime: process.uptime() }))
 app.listen(PORT, () => console.log('Music API on :' + PORT))
