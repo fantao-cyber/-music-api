@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: music-api
+    env: node
+    buildCommand: npm install
+    startCommand: node index.js
+    plan: free
+    envVars:
+      - key: MUSIC_U
+        sync: false
