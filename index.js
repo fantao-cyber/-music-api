@@ -388,7 +388,7 @@ app.get('/stream', (req, res) => {
   const { song_url } = require('NeteaseCloudMusicApi')
   const cookie = process.env.MUSIC_U || ''
   const cookieStr = cookie ? 'MUSIC_U=' + cookie + '; appver=8.0.0; os=pc;' : ''
-  song_url({ id, br: 999000 }, cookieStr).then(r => {
+  song_url({ id, br: 999000, cookie: cookieStr }).then(r => {
     const url = r.body?.data?.[0]?.url
     if (!url) return res.status(404).json({ error: 'no audio url' })
     const http = require('http')
